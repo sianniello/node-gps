@@ -1,3 +1,7 @@
+import {
+  error
+} from 'util';
+
 require('dotenv').config();
 const mqtt = require('mqtt');
 const TelegramBot = require('node-telegram-bot-api');
@@ -20,7 +24,7 @@ bot.on('message', (msg) => {
   const chatId = msg.chat.id;
 
   client.on('message', (topic, message) => {
-    const coordinates = { 
+    const coordinates = {
       lat: message.toString().split(', ')[0],
       lng: message.toString().split(', ')[1],
     };
@@ -31,13 +35,19 @@ bot.on('message', (msg) => {
       bot.sendMessage(chatId, `Distance: ${d} Km`);
   });
 
+  client.on('error', (err) => {
+    console.error(err);
+    setTimeout(() => {
+      client.reconnect();
+    }, 30000);
+  });
+
 });
 
-bot.on('error', (err) => console.error(err) );
+bot.on('error', (err) => console.error(err));
 
 //This function takes in latitude and longitude of two location and returns the distance between them as the crow flies (in km)
-function calcCrow(lat1, lon1, lat2, lon2) 
-{
+function calcCrow(lat1, lon1, lat2, lon2) {
   const R = 6371; // km
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
@@ -45,14 +55,13 @@ function calcCrow(lat1, lon1, lat2, lon2)
   lat2 = toRad(lat2);
 
   const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2); 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+    Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const d = R * c;
   return Math.round(d * 100) / 100;
 }
 
 // Converts numeric degrees to radians
-function toRad(Value) 
-{
-    return Value * Math.PI / 180;
+function toRad(Value) {
+  return Value * Math.PI / 180;
 }
