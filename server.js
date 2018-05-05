@@ -1,7 +1,3 @@
-import {
-  error
-} from 'util';
-
 require('dotenv').config();
 const mqtt = require('mqtt');
 const TelegramBot = require('node-telegram-bot-api');
