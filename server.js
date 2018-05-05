@@ -9,7 +9,7 @@ const bot = new TelegramBot(token, {
 
 const config = {
   port: 8883,
-  username: process.env.USER,
+  username: process.env.USR,
   password: process.env.AIO_KEY
 };
 console.log(config);
