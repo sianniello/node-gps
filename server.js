@@ -12,7 +12,7 @@ const config = {
   username: process.env.USER,
   password: process.env.AIO_KEY
 };
-
+console.log(config);
 const client = mqtt.connect(process.env.HOST, config);
 client.on('connect', () => client.subscribe('steno87/feeds/coordinates'));
 
