@@ -20,13 +20,13 @@ bot.on('message', (msg) => {
   const chatId = msg.chat.id;
 
   client.on('message', (topic, message) => {
-    console.log(message.toString());
     const coordinates = { 
       lat: message.toString().split(', ')[0],
       lng: message.toString().split(', ')[1],
     };
     const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
-    console.log(d);
+    console.log("Coordinates: ", message.toString());
+    console.log("Distance", d);
     if (d <= 1.5)
       bot.sendMessage(chatId, `Distance: ${d} Km`);
   });
