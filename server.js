@@ -7,36 +7,66 @@ const bot = new TelegramBot(token, {
   polling: true
 });
 
+let last_message = null;
 const config = {
   port: 8883,
   username: process.env.USR,
   password: process.env.AIO_KEY
 };
-console.log(config);
+
 const client = mqtt.connect(process.env.HOST, config);
 client.on('connect', () => client.subscribe('steno87/feeds/coordinates'));
+let active = false;
 
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
+  console.log("Message: ", msg.text);
 
-  client.on('message', (topic, message) => {
-    const coordinates = {
-      lat: message.toString().split(', ')[0],
-      lng: message.toString().split(', ')[1],
-    };
-    const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
-    console.log("Coordinates: ", message.toString());
-    console.log("Distance", d);
-    if (d <= 1.5)
-      bot.sendMessage(chatId, `Distance: ${d} Km`);
-  });
+  switch (msg.text) {
+    case '/start':
+      {
+        active = true;
+        client.on('message', (topic, message) => {
+          const coordinates = {
+            lat: message.toString().split(', ')[0],
+            lng: message.toString().split(', ')[1],
+          };
+          const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
+          console.log("Coordinates: ", message.toString());
+          console.log("Distance", d);
+          last_message = coordinates;
+          last_message.distance = d;
+          if (d <= 1.5)
+            bot.sendMessage(chatId, `Distance: ${d} Km`);
+        });
 
-  client.on('error', (err) => {
-    console.error(err);
-    setTimeout(() => {
-      client.reconnect();
-    }, 30000);
-  });
+        client.on('error', (err) => {
+          console.error(err, 'trying to reconnect...');
+          setTimeout(() => {
+            client.reconnect();
+          }, 30000);
+        });
+        break;
+      }
+
+    case '/position':
+      {
+        if (!active) {
+          bot.sendMessage(chatId, 'You need to start the service first. Use /start.');
+          break;
+        }
+        bot.sendMessage(chatId, `Last position: lat: ${last_message.lat}, long: ${last_message.lng}. Distance: ${last_message.distance}`)
+        break;
+      }
+
+    case '/stop':
+      {
+        active = false;
+        client.unsubscribe('steno87/feeds/coordinates');
+        break;
+      }
+
+  }
 
 });
 
