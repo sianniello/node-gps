@@ -56,7 +56,7 @@ bot.on('message', (msg) => {
           break;
         }
         bot.sendLocation(chatId,last_message.lat,last_message.lng);
-        bot.sendMessage(chatId, `Distance: ${last_message.distance}`);
+        bot.sendMessage(chatId, `Last position: lat: ${last_message.lat}, long: ${last_message.lng}. Distance: ${last_message.distance}`)
         break;
       }
 
