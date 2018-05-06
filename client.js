@@ -9,18 +9,17 @@ const config = {
 };
 const client = mqtt.connect(process.env.HOST, config);
 
+const routine = setInterval(() => {
+    if (client.connected) {
+    const coordinates = randomCoordinates();
+    client.publish('steno87/feeds/coordinates', coordinates);
+    console.log('Sending coordinates: ', coordinates);
+    }
+}, 20000);
 
-client.on('connect', () => {
-    setInterval(() => {
-        const coordinates = randomCoordinates();
-        client.publish('steno87/feeds/coordinates', coordinates);
-        console.log('Sending coordinates: ', coordinates);
-    }, 20000);
-});
-
-client.on('error', (error) => {
-    console.log(config);
-    console.log('MQTT Client Errored');
-    console.log(error);
-    client.end();
+client.on('error', err => {
+    console.error(err, 'trying to reconnect...');
+    setTimeout(() => {
+        client.reconnect();
+    }, 30000);
 });

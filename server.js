@@ -18,7 +18,7 @@ const client = mqtt.connect(process.env.HOST, config);
 client.on('connect', () => client.subscribe('steno87/feeds/coordinates'));
 let active = false;
 
-bot.on('message', (msg) => {
+bot.on('message', msg => {
   const chatId = msg.chat.id;
   console.log("Message: ", msg.text);
 
@@ -40,7 +40,7 @@ bot.on('message', (msg) => {
             bot.sendMessage(chatId, `Distance: ${d} Km`);
         });
 
-        client.on('error', (err) => {
+        client.on('error', err => {
           console.error(err, 'trying to reconnect...');
           setTimeout(() => {
             client.reconnect();
