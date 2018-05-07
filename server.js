@@ -25,27 +25,33 @@ bot.on('message', msg => {
   switch (msg.text) {
     case '/start':
       {
-        active = true;
-        client.on('message', (topic, message) => {
-          const coordinates = {
-            lat: message.toString().split(', ')[0],
-            lng: message.toString().split(', ')[1],
-          };
-          const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
-          console.log("Coordinates: ", message.toString());
-          console.log("Distance", d);
-          last_message = coordinates;
-          last_message.distance = d;
-          if (d <= 1.5)
-            bot.sendMessage(chatId, `Distance: ${d} Km`);
-        });
+        if (!active) {
+          active = true;
+          client.on('message', (topic, message) => {
+            const coordinates = {
+              lat: message.toString().split(',')[0],
+              lng: message.toString().split(',')[1],
+              tms: message.toString().split(',')[2]
+            };
+            const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
+            console.log("Coordinates: ", coordinates.lat, coordinates.lng);
+            console.log("Timestamp", coordinates.tms);
+            console.log("Distance", d);
+            last_message = coordinates;
+            last_message.distance = d;
+            if (d <= 1.5)
+              bot.sendMessage(chatId, `Distance: ${d} Km`);
+          });
 
-        client.on('error', err => {
-          console.error(err, 'trying to reconnect...');
-          setTimeout(() => {
-            client.reconnect();
-          }, 30000);
-        });
+          client.on('error', err => {
+            console.error(err, 'trying to reconnect...');
+            setTimeout(() => {
+              client.reconnect();
+            }, 30000);
+          });
+        } else {
+          bot.sendMessage(chatId, 'You have already stated the service');
+        }
         break;
       }
 
@@ -55,8 +61,8 @@ bot.on('message', msg => {
           bot.sendMessage(chatId, 'You need to start the service first. Use /start.');
           break;
         }
-        bot.sendLocation(chatId,last_message.lat,last_message.lng);
-        bot.sendMessage(chatId, `Last position: lat: ${last_message.lat}, long: ${last_message.lng}. Distance: ${last_message.distance}`);
+        bot.sendLocation(chatId, last_message.lat, last_message.lng);
+        bot.sendMessage(chatId, `Last position: lat: ${last_message.lat} long: ${last_message.lng} timestamp: ${last_message.tms}`);
         break;
       }
 
