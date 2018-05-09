@@ -1,13 +1,22 @@
 require('dotenv').config();
 const mqtt = require('mqtt');
 const TelegramBot = require('node-telegram-bot-api');
+const low = require('lowdb');
+const FileSync = require('lowdb/adapters/FileSync');
+
+const adapter = new FileSync('db.json');
+const db = low(adapter);
+
+db.defaults({
+  positions: []
+}).write();
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, {
   polling: true
 });
 
-let last_message = null;
+let last_message = db.get('positions').takeRight(1).value() || null;
 const config = {
   port: 8883,
   username: process.env.USR,
@@ -27,12 +36,22 @@ bot.on('message', msg => {
       {
         if (!active) {
           active = true;
+          bot.sendMessage(chatId, 'Service started');
           client.on('message', (topic, message) => {
             const coordinates = {
               lat: message.toString().split(',')[0],
               lng: message.toString().split(',')[1],
               tms: message.toString().split(',')[2]
             };
+
+            db.get('positions')
+              .push({
+                latitude: coordinates.lat,
+                longitude: coordinates.lng,
+                timestamp: coordinates.tms
+              })
+              .write();
+
             const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
             console.log("Coordinates: ", coordinates.lat, coordinates.lng);
             console.log("Timestamp", coordinates.tms);
