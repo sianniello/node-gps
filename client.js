@@ -11,13 +11,14 @@ const client = mqtt.connect(process.env.HOST, config);
 
 const routine = setInterval(() => {
     if (client.connected) {
-    const coordinates = randomCoordinates();
-    const lat = coordinates.split(', ')[0];
-    const lng = coordinates.split(', ')[1];
-    const timestamp = new Date().toLocaleString();
-    const message = `${lat},${lng},${timestamp}`;
-    client.publish('steno87/feeds/coordinates', message);
-    console.log('Sending coordinates: ', message);
+        const coordinates = randomCoordinates();
+        const lat = coordinates.split(', ')[0];
+        const lng = coordinates.split(', ')[1];
+        const timestamp = new Date().toLocaleString();
+        const obj = lat + '|' + lng + '|' + timestamp;
+        const message = obj;
+        client.publish('steno87/feeds/coordinates', message);
+        console.log('Sending coordinates: ', message);
     }
 }, 20000);
 

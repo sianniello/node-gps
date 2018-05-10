@@ -3,7 +3,7 @@ const mqtt = require('mqtt');
 const TelegramBot = require('node-telegram-bot-api');
 const low = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
-
+const shortid = require('shortid');
 const adapter = new FileSync('db.json');
 const db = low(adapter);
 
@@ -38,19 +38,14 @@ bot.on('message', msg => {
           active = true;
           bot.sendMessage(chatId, 'Service started');
           client.on('message', (topic, message) => {
+            console.log(message.toString());
             const coordinates = {
-              lat: message.toString().split(',')[0],
-              lng: message.toString().split(',')[1],
-              tms: message.toString().split(',')[2]
+              lat: message.toString().split('|')[0],
+              lng: message.toString().split('|')[1],
+              tms: message.toString().split('|')[2]
             };
 
-            db.get('positions')
-              .push({
-                latitude: coordinates.lat,
-                longitude: coordinates.lng,
-                timestamp: coordinates.tms
-              })
-              .write();
+            save(coordinates);
 
             const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
             console.log("Coordinates: ", coordinates.lat, coordinates.lng);
@@ -80,8 +75,11 @@ bot.on('message', msg => {
           bot.sendMessage(chatId, 'You need to start the service first. Use /start.');
           break;
         }
-        bot.sendLocation(chatId, last_message.lat, last_message.lng);
-        bot.sendMessage(chatId, `Last position: lat: ${last_message.lat} long: ${last_message.lng} timestamp: ${last_message.tms}`);
+        if (last_message) {
+          bot.sendLocation(chatId, last_message.lat, last_message.lng);
+          bot.sendMessage(chatId, `Last position: lat: ${last_message.lat} long: ${last_message.lng} timestamp: ${last_message.tms}`);
+        } else
+          bot.sendMessage(chatId, "Last position not available");
         break;
       }
 
@@ -116,4 +114,16 @@ function calcCrow(lat1, lon1, lat2, lon2) {
 // Converts numeric degrees to radians
 function toRad(Value) {
   return Value * Math.PI / 180;
+}
+
+function save(coordinates) {
+  if (db.get('positions').size().value() === 10)
+    db.get('positions').orderBy('timestamp', 'desc').pop().write();
+  db.get('positions')
+    .push({
+      id: shortid.generate(),
+      latitude: coordinates.lat,
+      longitude: coordinates.lng,
+      timestamp: coordinates.tms
+    }).write();
 }
