@@ -45,8 +45,6 @@ bot.on('message', msg => {
               tms: message.toString().split('|')[2]
             };
 
-            save(coordinates);
-
             const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
             console.log("Coordinates: ", coordinates.lat, coordinates.lng);
             console.log("Timestamp", coordinates.tms);
@@ -55,6 +53,8 @@ bot.on('message', msg => {
             last_message.distance = d;
             if (d <= 1.5)
               bot.sendMessage(chatId, `Distance: ${d} Km`);
+            
+              save(coordinates);
           });
 
           client.on('error', err => {
