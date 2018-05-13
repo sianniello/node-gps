@@ -16,7 +16,7 @@ const bot = new TelegramBot(token, {
   polling: true
 });
 
-let last_message = db.get('positions').takeRight(1).value() || null;
+let last_message = db.get('positions').orderBy('timestamp').last().value() || null;
 const config = {
   port: 8883,
   username: process.env.USR,
@@ -40,21 +40,21 @@ bot.on('message', msg => {
           client.on('message', (topic, message) => {
             console.log(message.toString());
             const coordinates = {
-              lat: message.toString().split('|')[0],
-              lng: message.toString().split('|')[1],
-              tms: message.toString().split('|')[2]
+              latitude: message.toString().split('|')[0],
+              longitude: message.toString().split('|')[1],
+              timestamp: message.toString().split('|')[2]
             };
 
-            const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.lat, coordinates.lng);
-            console.log("Coordinates: ", coordinates.lat, coordinates.lng);
+            const d = calcCrow(process.env.HOME_LAT, process.env.HOME_LNG, coordinates.latitude, coordinates.longitude);
+            console.log("Coordinates: ", coordinates.latitude, coordinates.longitude);
             console.log("Timestamp", coordinates.tms);
             console.log("Distance", d);
             last_message = coordinates;
             last_message.distance = d;
             if (d <= 1.5)
               bot.sendMessage(chatId, `Distance: ${d} Km`);
-            
-              save(coordinates);
+
+            save(coordinates);
           });
 
           client.on('error', err => {
@@ -76,8 +76,12 @@ bot.on('message', msg => {
           break;
         }
         if (last_message) {
-          bot.sendLocation(chatId, last_message.lat, last_message.lng);
-          bot.sendMessage(chatId, `Last position: lat: ${last_message.lat} long: ${last_message.lng} timestamp: ${last_message.tms}`);
+          console.log(last_message);
+          bot.sendLocation(chatId, last_message.latitude, last_message.longitude);
+          bot.sendMessage(chatId, `Last position:` +
+          '\n' + `latitude: ${last_message.latitude}` +
+          '\n' + `longitude: ${last_message.longitude}` +
+          '\n' + `timestamp: ${last_message.timestamp}`);
         } else
           bot.sendMessage(chatId, "Last position not available");
         break;
@@ -122,8 +126,8 @@ function save(coordinates) {
   db.get('positions')
     .push({
       id: shortid.generate(),
-      latitude: coordinates.lat,
-      longitude: coordinates.lng,
-      timestamp: coordinates.tms
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      timestamp: coordinates.timestamp
     }).write();
 }
